@@ -3,8 +3,9 @@
 // Аппартаменты
 var apartments = [];
 
-// Карта
+// Карта и блок с метками
 var map = document.querySelector('.map');
+var divMapPins = map.querySelector('.map__pins');
 
 // Массив с адресами аватаров
 var avatarNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -40,6 +41,7 @@ var photoApartments = ['http://o0.github.io/assets/images/tokyo/hotel1.jpg', 'ht
 
 // Фрагмент для наполнения элементами
 var fragment = document.createDocumentFragment();
+var fragment2 = document.createDocumentFragment();
 
 // Функция для выдавания случайного числа
 var randomNumber = function (min, max) {
@@ -140,11 +142,9 @@ for (i = 0; i < apartments.length; i++) {
   mapsPin.style = 'left: ' + pinX + 'px; top: ' + pinY + 'px;';
   mapsPin.querySelector('img').src = apartments[i].author.avatar;
   mapsPin.querySelector('img').alt = apartments[i].offer.title;
+  mapsPin.id = 'maps-pin-' + i;
   fragment.appendChild(mapsPin);
 }
-
-// Вставляем метки на карту
-map.querySelector('.map__pins').appendChild(fragment);
 
 // Вставляем изображения
 var insertPhoto = function (popupPhotos) {
@@ -187,14 +187,213 @@ for (i = 0; i < apartments.length; i++) {
   mapsCard.querySelector('.popup__description').textContent = apartments[i].offer.description;
   insertPhoto(mapsCard.querySelector('.popup__photos'));
   mapsCard.querySelector('.popup__avatar').src = apartments[i].author.avatar;
+  mapsCard.classList.add('hidden');
+  mapsCard.querySelector('.popup__close').id = 'popup__close-' + i;
+  mapsCard.id = 'maps__card-' + i;
 
-  fragment.appendChild(mapsCard);
+  fragment2.appendChild(mapsCard);
 }
 
-// Добавляем попапы объявлений на страницу
-map.insertBefore(fragment, map.querySelector(' .map__filters-container'));
+// Главный маркер на карте, его ширина и длина, и координаты
+var mapPinMain = map.querySelector('.map__pin--main');
+var widthPinMain = mapPinMain.offsetWidth;
+var heightPinMain = mapPinMain.offsetHeight;
+var mapPinMainX;
+var mapPinMainY;
+
+// Форма добавления объявления на карту
+var adForm = document.querySelector('.ad-form');
+// Группы форм для добавления объявления на карту
+var fieldsetsAdForm = adForm.querySelectorAll('.ad-form fieldset');
+// Поле добавления адреса
+var inputAddres = adForm.querySelector('#address');
+
+// Функция перевода страницы в активное состояние
+var onMapPinMainMouseup = function () {
+  for (i = fieldsetsAdForm.length - 1; i >= 0; i--) {
+    fieldsetsAdForm[i].disabled = false;
+  }
+  adForm.classList.remove('ad-form--disabled');
+  map.classList.remove('map--faded');
+  // Добавляем попапы объявлений на страницу
+  divMapPins.appendChild(fragment);
+  map.insertBefore(fragment2, map.querySelector('.map__filters-container'));
+  removeEventListener('mouseup', onMapPinMainMouseup);
+};
+
+// Функция для вычисления и передачи координаты метки в поле адрес
+var getXYtoAddres = function (evt) {
+  mapPinMainX = Math.round(evt.clientX + widthPinMain / 2);
+  mapPinMainY = Math.round(evt.clientY + heightPinMain);
+  inputAddres.value = mapPinMainX + ', ' + mapPinMainY;
+};
+
+// Действия при отпускании клавиши мыши с главного маркера
+mapPinMain.addEventListener('mouseup', onMapPinMainMouseup);
+mapPinMain.addEventListener('mouseup', function (evt) {
+  getXYtoAddres(evt);
+});
+
+// Коды клавиш
+var ENTER_CODE = 13;
+var ESC_CODE = 27;
+
+// Описание предыдущего аппартамента и id этой кнопки
+var idPrevAppartament;
+var idBtnPrevAppartament;
+
+// Проверяем есть ли у маркера id, значит это маркер соседних объявлений. Выводим блок этого объявления
+var showPinAppartament = function (evt) {
+  if (evt.target.classList.contains('map__pin') && evt.target.id) {
+    // Находим id блока описания нажатого маркера
+    var idNextAppartament = '#maps__card-' + evt.target.id.replace('maps-pin-', '');
+
+    // Если нажимаем в первый раз на маркер, то только открываем описание. Если нажатие не первое, то закрываем старое окно и открываем новое.
+    if (idPrevAppartament) {
+      map.querySelector(idPrevAppartament).classList.add('hidden');
+      map.querySelector(idNextAppartament).classList.remove('hidden');
+      map.querySelector(idBtnPrevAppartament).classList.remove('map__pin--active');
+      evt.target.classList.add('map__pin--active');
+    } else {
+      map.querySelector(idNextAppartament).classList.remove('hidden');
+      evt.target.classList.add('map__pin--active');
+    }
+    idPrevAppartament = idNextAppartament;
+    idBtnPrevAppartament = '#' + evt.target.id;
+
+    // Запускам проверку событий на нажатие ESC
+    document.addEventListener('keydown', onEscPress);
+  }
+};
+
+// Функция которая закрывае описание ESC
+var onEscPress = function (evt) {
+  if (evt.keyCode === ESC_CODE) {
+    map.querySelector(idPrevAppartament).classList.add('hidden');
+  }
+};
+
+// Закрываем попап объявления
+var closePinAppartament = function (evt) {
+  var idClose = evt.target.id.replace('popup__close-', '');
+  var idClosePin = '#maps-pin-' + idClose;
+  var idCloseDescriprion = '#maps__card-' + idClose;
+
+  if (evt.target.classList.contains('popup__close')) {
+    map.querySelector(idClosePin).classList.remove('map__pin--active');
+    map.querySelector(idCloseDescriprion).classList.add('hidden');
+    document.removeEventListener('keydown', onEscPress);
+  }
+};
+
+// Действия при нажатии мыши на соседние маркеры
+divMapPins.addEventListener('click', function (evt) {
+  showPinAppartament(evt);
+}, true);
+
+divMapPins.addEventListener('keydown', function (evt) {
+  if (evt.keyCode === ENTER_CODE) {
+    showPinAppartament(evt);
+  }
+}, true);
+
+map.addEventListener('keydown', function (evt) {
+  if (evt.keyCode === ENTER_CODE) {
+    closePinAppartament(evt);
+  }
+}, true);
+
+map.addEventListener('click', function (evt) {
+  closePinAppartament(evt);
+}, true);
 
 
-// Выводим карту
-map.classList.remove('map--faded');
+// Поле для выбора типа жилья и цена за ночь
+var inputTypeApartment = document.querySelector('#type');
+var inputPrice = document.querySelector('#price');
+
+// Минимальная цена жилья в зависимости от типа
+var minPriceBungalo = 0;
+var minPriceFlat = 1000;
+var minPriceHouse = 5000;
+var minPricePalace = 10000;
+
+
+// Функция замены миниального прайса и плайсходлдер
+var getMinPrice = function () {
+  if (inputTypeApartment.value === 'bungalo') {
+  inputPrice.min = minPriceBungalo;
+  inputPrice.placeholder = minPriceBungalo;
+  } else if (inputTypeApartment.value === 'flat') {
+  inputPrice.min = minPriceFlat;
+  inputPrice.placeholder = minPriceFlat;
+  } else if (inputTypeApartment.value === 'house') {
+  inputPrice.min = minPriceHouse;
+  inputPrice.placeholder = minPriceHouse;
+  } else if (inputTypeApartment.value === 'palace') {
+  inputPrice.min = minPricePalace;
+  inputPrice.placeholder = minPricePalace;
+  }
+}
+
+
+// Отлавливание кликов для проверки адреса
+inputTypeApartment.addEventListener('change', function () {
+  getMinPrice();
+});
+
+// Время заезда и время выезда
+var inputTimeIn = document.querySelector('#timein');
+var inputTimeOut = document.querySelector('#timeout');
+
+
+// Устанавление связи между временем выезда и вьезда
+inputTimeIn.addEventListener('change', function () {
+   inputTimeOut.selectedIndex = inputTimeIn.selectedIndex;
+});
+
+// Устанавление связи между временем выезда и вьезда
+inputTimeOut.addEventListener('change', function () {
+  inputTimeIn.selectedIndex = inputTimeOut.selectedIndex;
+});
+
+// Количество комнат и количество мест
+var inputRoomNumber = document.querySelector('#room_number');
+var inputCapacity = document.querySelector('#capacity');
+
+
+// Функция блокировки количества гостей в зависимости от количества комнат
+var getSelectedCapacity =function () {
+  if (inputRoomNumber.selectedIndex === 0) {
+    inputCapacity[0].disabled = false;
+    inputCapacity[1].disabled = false;
+    inputCapacity[2].disabled = true;
+    inputCapacity.selectedIndex = 2;
+    inputCapacity[3].disabled = false;
+  } else if (inputRoomNumber.selectedIndex === 1) {
+    inputCapacity[0].disabled = true;
+    inputCapacity[1].disabled = false;
+    inputCapacity[2].disabled = false;
+    inputCapacity.selectedIndex = 1;
+    inputCapacity[3].disabled = true;
+  } else if (inputRoomNumber.selectedIndex === 2) {
+    inputCapacity[0].disabled = false;
+    inputCapacity[1].disabled = false;
+    inputCapacity[2].disabled = false;
+    inputCapacity.selectedIndex = 0;
+    inputCapacity[3].disabled = true;
+  } else if (inputRoomNumber.selectedIndex === 3) {
+    inputCapacity[0].disabled = true;
+    inputCapacity[1].disabled = true;
+    inputCapacity[2].disabled = true;
+    inputCapacity[3].disabled = false;
+    inputCapacity.selectedIndex = 3;
+  }
+};
+
+// Выбор комнат
+inputRoomNumber.addEventListener('change', function () {
+  getSelectedCapacity();
+});
+
 
