@@ -99,26 +99,34 @@ var idBtnPrevAppartament;
 
 // Проверяем есть ли у маркера id, значит это маркер соседних объявлений. Выводим блок этого объявления
 var showPinAppartament = function (evt) {
-  if (evt.target.classList.contains('map__pin') && evt.target.id) {
-    // Находим id блока описания нажатого маркера
-    var idNextAppartament = '#maps__card-' + evt.target.id.replace('maps-pin-', '');
-
-    // Если нажимаем в первый раз на маркер, то только открываем описание. Если нажатие не первое, то закрываем старое окно и открываем новое.
-    if (idPrevAppartament) {
-      map.querySelector(idPrevAppartament).classList.add('hidden');
-      map.querySelector(idNextAppartament).classList.remove('hidden');
-      map.querySelector(idBtnPrevAppartament).classList.remove('map__pin--active');
-      evt.target.classList.add('map__pin--active');
-    } else {
-      map.querySelector(idNextAppartament).classList.remove('hidden');
-      evt.target.classList.add('map__pin--active');
-    }
-    idPrevAppartament = idNextAppartament;
-    idBtnPrevAppartament = '#' + evt.target.id;
-
-    // Запускам проверку событий на нажатие ESC
-    document.addEventListener('keydown', onEscPress);
+  // Первый if для хрома(target - это img внутри button)
+  // Второй для mozilla(target - это button, хоть и жмем на img внутри него)
+  if (evt.target.parentElement.id) {
+    var evtElemnt = evt.target.parentElement;
+  } else if (evt.target.classList.contains('map__pin') && evt.target.id) {
+    evtElemnt = evt.target;
+  } else {
+    return;
   }
+
+  // Находим id блока описания нажатого маркера
+  var idNextAppartament = '#maps__card-' + evtElemnt.id.replace('maps-pin-', '');
+
+  // Если нажимаем в первый раз на маркер, то только открываем описание. Если нажатие не первое, то закрываем старое окно и открываем новое.
+  if (idPrevAppartament) {
+    map.querySelector(idPrevAppartament).classList.add('hidden');
+    map.querySelector(idNextAppartament).classList.remove('hidden');
+    map.querySelector(idBtnPrevAppartament).classList.remove('map__pin--active');
+    evtElemnt.classList.add('map__pin--active');
+  } else {
+    map.querySelector(idNextAppartament).classList.remove('hidden');
+    evtElemnt.classList.add('map__pin--active');
+  }
+  idPrevAppartament = idNextAppartament;
+  idBtnPrevAppartament = '#' + evtElemnt.id;
+
+  // Запускам проверку событий на нажатие ESC
+  document.addEventListener('keydown', onEscPress);
 };
 
 // Функция которая закрывае описание ESC
