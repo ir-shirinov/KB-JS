@@ -197,7 +197,6 @@ for (i = 0; i < apartments.length; i++) {
 // Главный маркер на карте, его ширина и длина, и координаты
 var mapPinMain = map.querySelector('.map__pin--main');
 var widthPinMain = mapPinMain.offsetWidth;
-var heightPinMain = mapPinMain.offsetHeight;
 var mapPinMainX;
 var mapPinMainY;
 
@@ -221,17 +220,63 @@ var onMapPinMainMouseup = function () {
   removeEventListener('mouseup', onMapPinMainMouseup);
 };
 
-// Функция для вычисления и передачи координаты метки в поле адрес
-var getXYtoAddres = function (evt) {
-  mapPinMainX = Math.round(evt.clientX + widthPinMain / 2);
-  mapPinMainY = Math.round(evt.clientY + heightPinMain);
-  inputAddres.value = mapPinMainX + ', ' + mapPinMainY;
-};
+// Действия при нажатии на мышку с главного маркера
+mapPinMain.addEventListener('mousedown', onMapPinMainMouseup);
 
-// Действия при отпускании клавиши мыши с главного маркера
-mapPinMain.addEventListener('mouseup', onMapPinMainMouseup);
-mapPinMain.addEventListener('mouseup', function (evt) {
-  getXYtoAddres(evt);
+// Движение маркера
+mapPinMain.addEventListener('mousedown', function (evt) {
+  evt.preventDefault();
+
+  var startPosition = {
+    x: evt.clientX,
+    y: evt.clientY
+  };
+
+  var onMouseMove = function (moveEvt) {
+    moveEvt.preventDefault();
+
+    var shift = {
+      newX: startPosition.x - moveEvt.clientX,
+      newY: startPosition.y - moveEvt.clientY
+    };
+
+    startPosition = {
+      x: moveEvt.clientX,
+      y: moveEvt.clientY
+    };
+
+    var newLeft = mapPinMain.offsetLeft - shift.newX;
+    var newTop = mapPinMain.offsetTop - shift.newY;
+
+    if (newLeft < 0) {
+      newLeft = 0;
+    } else if (newLeft > divMapPins.offsetWidth - widthPinMain) {
+      newLeft = divMapPins.offsetWidth - widthPinMain;
+    }
+
+    if (newTop < 130) {
+      newTop = 130;
+    } else if (newTop > 630) {
+      newTop = 630;
+    }
+
+    mapPinMain.style.left = newLeft + 'px';
+    mapPinMain.style.top = newTop + 'px';
+
+    mapPinMainX = newLeft;
+    mapPinMainY = newTop;
+    inputAddres.value = mapPinMainX + ', ' + mapPinMainY;
+  };
+
+  var onMouseUp = function (upEvt) {
+    upEvt.preventDefault();
+
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+  };
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
 });
 
 // Коды клавиш
@@ -322,19 +367,19 @@ var minPricePalace = 10000;
 // Функция замены миниального прайса и плайсходлдер
 var getMinPrice = function () {
   if (inputTypeApartment.value === 'bungalo') {
-  inputPrice.min = minPriceBungalo;
-  inputPrice.placeholder = minPriceBungalo;
+    inputPrice.min = minPriceBungalo;
+    inputPrice.placeholder = minPriceBungalo;
   } else if (inputTypeApartment.value === 'flat') {
-  inputPrice.min = minPriceFlat;
-  inputPrice.placeholder = minPriceFlat;
+    inputPrice.min = minPriceFlat;
+    inputPrice.placeholder = minPriceFlat;
   } else if (inputTypeApartment.value === 'house') {
-  inputPrice.min = minPriceHouse;
-  inputPrice.placeholder = minPriceHouse;
+    inputPrice.min = minPriceHouse;
+    inputPrice.placeholder = minPriceHouse;
   } else if (inputTypeApartment.value === 'palace') {
-  inputPrice.min = minPricePalace;
-  inputPrice.placeholder = minPricePalace;
+    inputPrice.min = minPricePalace;
+    inputPrice.placeholder = minPricePalace;
   }
-}
+};
 
 
 // Отлавливание кликов для проверки адреса
@@ -349,7 +394,7 @@ var inputTimeOut = document.querySelector('#timeout');
 
 // Устанавление связи между временем выезда и вьезда
 inputTimeIn.addEventListener('change', function () {
-   inputTimeOut.selectedIndex = inputTimeIn.selectedIndex;
+  inputTimeOut.selectedIndex = inputTimeIn.selectedIndex;
 });
 
 // Устанавление связи между временем выезда и вьезда
@@ -363,7 +408,7 @@ var inputCapacity = document.querySelector('#capacity');
 
 
 // Функция блокировки количества гостей в зависимости от количества комнат
-var getSelectedCapacity =function () {
+var getSelectedCapacity = function () {
   if (inputRoomNumber.selectedIndex === 0) {
     inputCapacity[0].disabled = false;
     inputCapacity[1].disabled = false;
@@ -395,5 +440,4 @@ var getSelectedCapacity =function () {
 inputRoomNumber.addEventListener('change', function () {
   getSelectedCapacity();
 });
-
 
