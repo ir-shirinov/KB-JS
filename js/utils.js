@@ -27,6 +27,10 @@
         newArray[i] = arrayItem[i];
       }
       return newArray;
+    },
+
+    onError: function (message) {
+      throw new Error(message);
     }
 
   };

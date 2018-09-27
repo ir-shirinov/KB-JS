@@ -54,36 +54,46 @@
 
   // Функция блокировки количества гостей в зависимости от количества комнат
   var getSelectedCapacity = function () {
-    if (inputRoomNumber.selectedIndex === 0) {
-      inputCapacity[0].disabled = false;
-      inputCapacity[1].disabled = false;
-      inputCapacity[2].disabled = true;
-      inputCapacity.selectedIndex = 2;
-      inputCapacity[3].disabled = false;
-    } else if (inputRoomNumber.selectedIndex === 1) {
-      inputCapacity[0].disabled = true;
-      inputCapacity[1].disabled = false;
-      inputCapacity[2].disabled = false;
-      inputCapacity.selectedIndex = 1;
-      inputCapacity[3].disabled = true;
-    } else if (inputRoomNumber.selectedIndex === 2) {
-      inputCapacity[0].disabled = false;
-      inputCapacity[1].disabled = false;
-      inputCapacity[2].disabled = false;
-      inputCapacity.selectedIndex = 0;
-      inputCapacity[3].disabled = true;
-    } else if (inputRoomNumber.selectedIndex === 3) {
-      inputCapacity[0].disabled = true;
-      inputCapacity[1].disabled = true;
-      inputCapacity[2].disabled = true;
-      inputCapacity[3].disabled = false;
-      inputCapacity.selectedIndex = 3;
+    inputCapacity[0].disabled = false;
+    inputCapacity[1].disabled = false;
+    inputCapacity[2].disabled = false;
+    inputCapacity[3].disabled = false;
+    inputCapacity.selectedIndex = 2;
+
+    switch (inputRoomNumber.selectedIndex) {
+      case 0:
+        inputCapacity[0].disabled = true;
+        inputCapacity[1].disabled = true;
+        inputCapacity[3].disabled = true;
+        break;
+      case 1:
+        inputCapacity[0].disabled = true;
+        inputCapacity[3].disabled = true;
+        break;
+      case 2:
+        inputCapacity[3].disabled = true;
+        break;
+      case 3:
+        inputCapacity[0].disabled = true;
+        inputCapacity[1].disabled = true;
+        inputCapacity[2].disabled = true;
+        inputCapacity.selectedIndex = 3;
+        break;
     }
+
   };
 
   // Выбор комнат
   inputRoomNumber.addEventListener('change', function () {
     getSelectedCapacity();
+  });
+
+  var form = document.querySelector('.ad-form');
+  form.addEventListener('submit', function (evtSubmit) {
+    window.backend.save(new FormData(form), function () {
+      form.reset();
+    }, window.utils.onError);
+    evtSubmit.preventDefault();
   });
 
 })();
